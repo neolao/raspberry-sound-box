@@ -6,3 +6,5 @@ pip3 install RPi.GPIO
 pip3 install spidev
 pip3 install serial
 ```
+
+edit `/boot/config.txt` and uncomment `dtparam=i2s=con`
