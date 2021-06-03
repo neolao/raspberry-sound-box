@@ -21,9 +21,11 @@ if __name__ == '__main__':
         pn532.SAM_configuration()
 
         print('Waiting for RFID/NFC card...')
+        subprocess.run(["mpg123", "sounds/je-suis-prete.mp3"])
         lastUidString = ''
         process = None
         recordProcess = None
+        recordStep = 0
         while True:
             # Check if a card is available to read
             #print('.')
@@ -34,21 +36,53 @@ if __name__ == '__main__':
                 continue
 
             uidString = ''.join(format(x, '02x') for x in uid)
+
+            # Check the recorder card
+            if uidString == "70cddb2a" and recordStep == 0:
+                subprocess.run(["mpg123", "sounds/veuillez-me-montrer-la-carte-a-enregistrer.mp3"])
+                recordStep = 1
+                continue
+
+            if recordStep == 1:
+                subprocess.run(["mpg123", "sounds/l-enregistrement-demarre-dans-3-2-1.mp3"])
+                recordProcess = subprocess.Popen(["/usr/bin/arecord", "-D", "hw:1,0", "-f", "S32_LE", "-r", "16000", "-c", "2", "data/" + uidString + ".wav"], stdout=subprocess.PIPE, stdin=subprocess.PIPE, preexec_fn=os.setsid, shell=False)
+                recordStep = 2
+                continue
+
+            if recordStep == 2:
+                recordProcess.terminate()
+                recordProcess = None
+                recordStep = 0
+                subprocess.run(["mpg123", "sounds/enregistre.mp3"])
+                time.sleep(2)
+                continue
+
+            # Stop process
+            if uidString == "4a14b71e":
+                if process is not None:
+                    process.terminate()
+                continue
+
             if uidString == lastUidString and process.poll() is None:
                 continue
 
-            # Check the recorder card
-            if uidString == "70cddb2a":
-                if recordProcess is not None:
-                    recordProcess.terminate()
-                    subprocess.run(["mpg123", "sounds/enregistre.mp3"])
-                    recordProcess = None
-                    time.sleep(1)
-                    subprocess.run(["aplay", "record.wav"])
-                    time.sleep(1)
-                else:
-                    subprocess.run(["mpg123", "sounds/pret-a-enregistrer.mp3"])
-                    recordProcess = subprocess.Popen(["/usr/bin/arecord", "-D", "hw:1,0", "-f", "S32_LE", "-r", "16000", "-c", "2", "record.wav"], stdout=subprocess.PIPE, stdin=subprocess.PIPE, preexec_fn=os.setsid, shell=False)
+            #print('Found card with UID:', uidString, [hex(i) for i in uid])
+
+            # Check recorded file
+            wavFilePath = "./data/" + uidString + ".wav"
+            if Path(wavFilePath).is_file():
+                lastUidString = uidString
+                if process is not None:
+                    process.terminate()
+                process = subprocess.Popen(["/usr/bin/aplay", wavFilePath], stdout=subprocess.PIPE, shell=False)
+                continue
+
+            mp3FilePath = "./data/" + uidString + ".mp3"
+            if Path(mp3FilePath).is_file():
+                lastUidString = uidString
+                if process is not None:
+                    process.terminate()
+                process = subprocess.Popen(["/usr/bin/mpg123", mp3FilePath], stdout=subprocess.PIPE, shell=False)
                 continue
 
             # Check if a command exists
@@ -58,11 +92,9 @@ if __name__ == '__main__':
                 subprocess.run(["mpg123", "sounds/je-ne-connais-pas-cette-carte.mp3"])
                 continue
 
-            #print('Found card with UID:', uidString, [hex(i) for i in uid])
             lastUidString = uidString
             if process is not None:
                 process.terminate()
-
             with open(commandFilePath) as commandString:
                 command = loadJson(commandString)
                 process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=False)
