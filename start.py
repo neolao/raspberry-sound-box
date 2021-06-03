@@ -1,13 +1,16 @@
 import RPi.GPIO as GPIO
-import os
 import subprocess
-
+from json import load as loadJson
+from pathlib import Path
 from pn532 import *
-
+import time
+import os
+import signal
 
 if __name__ == '__main__':
     try:
-        pn532 = PN532_SPI(debug=False, reset=20, cs=4)
+        #pn532 = PN532_SPI(debug=False, reset=20, cs=4)
+        pn532 = PN532_SPI(debug=False, reset=16, cs=4)
         #pn532 = PN532_I2C(debug=False, reset=20, req=16)
         #pn532 = PN532_UART(debug=False, reset=20)
 
@@ -20,6 +23,7 @@ if __name__ == '__main__':
         print('Waiting for RFID/NFC card...')
         lastUidString = ''
         process = None
+        recordProcess = None
         while True:
             # Check if a card is available to read
             #print('.')
@@ -29,17 +33,39 @@ if __name__ == '__main__':
             if uid is None:
                 continue
 
-            #print('Found card with UID:', [hex(i) for i in uid])
             uidString = ''.join(format(x, '02x') for x in uid)
             if uidString == lastUidString and process.poll() is None:
                 continue
 
+            # Check the recorder card
+            if uidString == "70cddb2a":
+                if recordProcess is not None:
+                    recordProcess.terminate()
+                    subprocess.run(["mpg123", "sounds/enregistre.mp3"])
+                    recordProcess = None
+                    time.sleep(1)
+                    subprocess.run(["aplay", "record.wav"])
+                    time.sleep(1)
+                else:
+                    subprocess.run(["mpg123", "sounds/pret-a-enregistrer.mp3"])
+                    recordProcess = subprocess.Popen(["/usr/bin/arecord", "-D", "hw:1,0", "-f", "S32_LE", "-r", "16000", "-c", "2", "record.wav"], stdout=subprocess.PIPE, stdin=subprocess.PIPE, preexec_fn=os.setsid, shell=False)
+                continue
+
+            # Check if a command exists
+            commandFilePath = "./data/" + uidString + ".json"
+            if not Path(commandFilePath).is_file():
+                print("Unknown tag:", uidString)
+                subprocess.run(["mpg123", "sounds/je-ne-connais-pas-cette-carte.mp3"])
+                continue
+
+            #print('Found card with UID:', uidString, [hex(i) for i in uid])
             lastUidString = uidString
-            print('Found card with UID:', uidString, [hex(i) for i in uid])
             if process is not None:
                 process.terminate()
 
-            process = subprocess.Popen(["/usr/bin/aplay", "/home/pi/test.wav"], stdout=subprocess.PIPE, shell=False)
+            with open(commandFilePath) as commandString:
+                command = loadJson(commandString)
+                process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=False)
     except Exception as e:
         print(e)
     finally:
