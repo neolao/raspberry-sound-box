@@ -59,45 +59,58 @@ if __name__ == '__main__':
 
             # Stop process
             if uidString == "4a14b71e":
+                print("STOP")
                 if process is not None:
                     process.terminate()
+                time.sleep(2)
                 continue
 
             if uidString == lastUidString and process.poll() is None:
                 continue
 
-            #print('Found card with UID:', uidString, [hex(i) for i in uid])
+            print('Found card with UID:', uidString, [hex(i) for i in uid])
 
-            # Check recorded file
+            # Check if a command exists
+            commandFilePath = "./data/" + uidString + ".json"
+            if Path(commandFilePath).is_file():
+                with open(commandFilePath) as commandDataString:
+                    commandData = loadJson(commandDataString)
+                    print(commandData)
+                    if commandData["stopPreviousCommand"] is False:
+                        subprocess.Popen(commandData["command"], stdout=subprocess.PIPE, shell=False)
+                    else:
+                        lastUidString = uidString
+                        if process is not None:
+                            process.terminate()
+                        processs = subprocess.Popen(commandData["command"], stdout=subprocess.PIPE, shell=False)
+
+                    time.sleep(2);
+                continue
+
+            # Check recorded WAV file
             wavFilePath = "./data/" + uidString + ".wav"
             if Path(wavFilePath).is_file():
                 lastUidString = uidString
                 if process is not None:
                     process.terminate()
                 process = subprocess.Popen(["/usr/bin/aplay", wavFilePath], stdout=subprocess.PIPE, shell=False)
+                time.sleep(2);
                 continue
 
+            # Check MP3 file
             mp3FilePath = "./data/" + uidString + ".mp3"
             if Path(mp3FilePath).is_file():
                 lastUidString = uidString
                 if process is not None:
                     process.terminate()
                 process = subprocess.Popen(["/usr/bin/mpg123", mp3FilePath], stdout=subprocess.PIPE, shell=False)
+                time.sleep(2);
                 continue
 
-            # Check if a command exists
-            commandFilePath = "./data/" + uidString + ".json"
-            if not Path(commandFilePath).is_file():
-                print("Unknown tag:", uidString)
-                subprocess.run(["mpg123", "sounds/je-ne-connais-pas-cette-carte.mp3"])
-                continue
-
-            lastUidString = uidString
-            if process is not None:
-                process.terminate()
-            with open(commandFilePath) as commandString:
-                command = loadJson(commandString)
-                process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=False)
+            # Otherwise, it is an unknown tag
+            print("Unknown tag:", uidString)
+            subprocess.run(["mpg123", "sounds/je-ne-connais-pas-cette-carte.mp3"])
+            time.sleep(2);
     except Exception as e:
         print(e)
     finally:
