@@ -21,7 +21,7 @@ if __name__ == '__main__':
         pn532.SAM_configuration()
 
         print('Waiting for RFID/NFC card...')
-        subprocess.run(["mpg123", "sounds/je-suis-prete.mp3"])
+        subprocess.run(["mpv", "sounds/je-suis-prete.mp3"])
         lastUidString = ''
         process = None
         recordProcess = None
@@ -29,7 +29,6 @@ if __name__ == '__main__':
         context = None
         while True:
             # Check if a card is available to read
-            #print('.')
             uid = pn532.read_passive_target(timeout=0.5)
 
             # Try again if no card is available.
@@ -40,12 +39,12 @@ if __name__ == '__main__':
 
             # Check the recorder card
             if uidString == "70cddb2a" and recordStep == 0:
-                subprocess.run(["mpg123", "sounds/veuillez-me-montrer-la-carte-a-enregistrer.mp3"])
+                subprocess.run(["mpv", "sounds/veuillez-me-montrer-la-carte-a-enregistrer.mp3"])
                 recordStep = 1
                 continue
 
             if recordStep == 1:
-                subprocess.run(["mpg123", "sounds/l-enregistrement-demarre-dans-3-2-1.mp3"])
+                subprocess.run(["mpv", "sounds/l-enregistrement-demarre-dans-3-2-1.mp3"])
                 recordProcess = subprocess.Popen(["/usr/bin/arecord", "-D", "hw:1,0", "-f", "S32_LE", "-r", "16000", "-c", "2", "data/" + uidString + ".wav"], stdout=subprocess.PIPE, stdin=subprocess.PIPE, preexec_fn=os.setsid, shell=False)
                 recordStep = 2
                 continue
@@ -54,7 +53,7 @@ if __name__ == '__main__':
                 recordProcess.terminate()
                 recordProcess = None
                 recordStep = 0
-                subprocess.run(["mpg123", "sounds/enregistre.mp3"])
+                subprocess.run(["mpv", "sounds/enregistre.mp3"])
                 time.sleep(2)
                 continue
 
@@ -116,13 +115,13 @@ if __name__ == '__main__':
                 lastUidString = uidString
                 if process is not None:
                     process.terminate()
-                process = subprocess.Popen(["/usr/bin/mpg123", mp3FilePath], stdout=subprocess.PIPE, shell=False)
+                process = subprocess.Popen(["/usr/bin/mpv", mp3FilePath], stdout=subprocess.PIPE, shell=False)
                 time.sleep(2);
                 continue
 
             # Otherwise, it is an unknown tag
             print("Unknown tag:", uidString)
-            subprocess.run(["mpg123", "sounds/je-ne-connais-pas-cette-carte.mp3"])
+            subprocess.run(["mpv", "sounds/je-ne-connais-pas-cette-carte.mp3"])
             time.sleep(2);
     except Exception as e:
         print(e)
