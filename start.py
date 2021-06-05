@@ -26,6 +26,7 @@ if __name__ == '__main__':
         process = None
         recordProcess = None
         recordStep = 0
+        context = None
         while True:
             # Check if a card is available to read
             #print('.')
@@ -65,7 +66,7 @@ if __name__ == '__main__':
                 time.sleep(2)
                 continue
 
-            if uidString == lastUidString and process.poll() is None:
+            if uidString == lastUidString and process is not None and process.poll() is None:
                 continue
 
             print('Found card with UID:', uidString, [hex(i) for i in uid])
@@ -73,16 +74,28 @@ if __name__ == '__main__':
             # Check if a command exists
             commandFilePath = "./data/" + uidString + ".json"
             if Path(commandFilePath).is_file():
-                with open(commandFilePath) as commandDataString:
-                    commandData = loadJson(commandDataString)
-                    print(commandData)
-                    if commandData["stopPreviousCommand"] is False:
-                        subprocess.Popen(commandData["command"], stdout=subprocess.PIPE, shell=False)
-                    else:
-                        lastUidString = uidString
-                        if process is not None:
-                            process.terminate()
-                        processs = subprocess.Popen(commandData["command"], stdout=subprocess.PIPE, shell=False)
+                with open(commandFilePath) as dataString:
+                    data = loadJson(dataString)
+                    print(data)
+                    action = data["action"]
+
+                    if action == "command":
+                        if "stopPreviousCommand" in data and data["stopPreviousCommand"] is False:
+                            subprocess.Popen(data["command"], stdout=subprocess.PIPE, shell=False)
+                        else:
+                            lastUidString = uidString
+                            if process is not None:
+                                process.terminate()
+                            if context is not None and "contexts" in data is not None and context in data["contexts"]:
+                                print("Execute command with context", context)
+                                processs = subprocess.Popen(data["contexts"][context], stdout=subprocess.PIPE, shell=False)
+                            else:
+                                print("Execute command")
+                                processs = subprocess.Popen(data["command"], stdout=subprocess.PIPE, shell=False)
+
+                    elif action == "setContext":
+                        context = data["context"]
+                        print("Set context:", context)
 
                     time.sleep(2);
                 continue
