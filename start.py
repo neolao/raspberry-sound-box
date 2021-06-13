@@ -98,10 +98,10 @@ if __name__ == '__main__':
                                 process.terminate()
                             if context is not None and "contexts" in data is not None and context in data["contexts"]:
                                 print("Execute command with context", context)
-                                processs = subprocess.Popen(data["contexts"][context], stdout=subprocess.PIPE, shell=False)
+                                process = subprocess.Popen(data["contexts"][context], stdout=subprocess.PIPE, shell=False)
                             else:
                                 print("Execute command")
-                                processs = subprocess.Popen(data["command"], stdout=subprocess.PIPE, shell=False)
+                                process = subprocess.Popen(data["command"], stdout=subprocess.PIPE, shell=False)
 
                     elif action == "setContext":
                         context = data["context"]
