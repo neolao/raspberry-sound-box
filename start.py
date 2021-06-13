@@ -133,6 +133,9 @@ if __name__ == '__main__':
             # Otherwise, it is an unknown tag
             print("Unknown tag:", uidString)
             subprocess.run(["mpv", "sounds/je-ne-connais-pas-cette-carte.mp3"])
+            f = open("data/last-unknown-card.txt", "w")
+            f.write(uidString)
+            f.close()
             time.sleep(2);
     except Exception as e:
         print(e)
