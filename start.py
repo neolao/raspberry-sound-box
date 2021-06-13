@@ -7,6 +7,8 @@ import time
 import os
 import signal
 
+LED = 23
+
 if __name__ == '__main__':
     try:
         #pn532 = PN532_SPI(debug=False, reset=20, cs=4)
@@ -19,6 +21,10 @@ if __name__ == '__main__':
 
         # Configure PN532 to communicate with MiFare cards
         pn532.SAM_configuration()
+
+        # Confgure LED
+        GPIO.setup(LED, GPIO.OUT)
+        GPIO.output(LED, GPIO.LOW)
 
         print('Waiting for RFID/NFC card...')
         subprocess.run(["mpv", "sounds/je-suis-prete.mp3"])
@@ -36,6 +42,11 @@ if __name__ == '__main__':
                 continue
 
             uidString = ''.join(format(x, '02x') for x in uid)
+
+            print('UID', uidString)
+            GPIO.output(LED, GPIO.HIGH)
+            time.sleep(0.2)
+            GPIO.output(LED, GPIO.LOW)
 
             # Check the recorder card
             if uidString == "70cddb2a" and recordStep == 0:
