@@ -11,9 +11,14 @@ import glob
 LED = 23
 
 def findFile(uid, extension = "json"):
-  for name in glob.glob("data/" + uid + ".*." + extension):
-    return name
-  return None
+    for name in glob.glob("data/" + uid + ".*." + extension):
+        return name
+
+    filePath = "./data/" + uid + "." + extension
+    if Path(filePath).is_file():
+        return filePath
+
+    return None
 
 if __name__ == '__main__':
     try:
@@ -88,7 +93,6 @@ if __name__ == '__main__':
             print('Found card with UID:', uidString, [hex(i) for i in uid])
 
             # Check if a command exists
-            #commandFilePath = "./data/" + uidString + ".json"
             commandFilePath = findFile(uidString, "json")
             if commandFilePath is not None and Path(commandFilePath).is_file():
                 with open(commandFilePath) as dataString:
@@ -118,8 +122,8 @@ if __name__ == '__main__':
                 continue
 
             # Check recorded WAV file
-            wavFilePath = "./data/" + uidString + ".wav"
-            #wavFilePath = findFile(uidString, "wav")
+            #wavFilePath = "./data/" + uidString + ".wav"
+            wavFilePath = findFile(uidString, "wav")
             if wavFilePath is not None and Path(wavFilePath).is_file():
                 lastUidString = uidString
                 if process is not None:
@@ -129,8 +133,8 @@ if __name__ == '__main__':
                 continue
 
             # Check MP3 file
-            mp3FilePath = "./data/" + uidString + ".mp3"
-            #mp3FilePath = findFile(uidString, "mp3")
+            #mp3FilePath = "./data/" + uidString + ".mp3"
+            mp3FilePath = findFile(uidString, "mp3")
             if mp3FilePath is not None and Path(mp3FilePath).is_file():
                 lastUidString = uidString
                 if process is not None:
