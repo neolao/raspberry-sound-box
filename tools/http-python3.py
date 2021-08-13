@@ -18,15 +18,16 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
         raw_body = _self.rfile.read(content_len)
 
         #data = json.load(raw_body)
-        print(raw_body)
+        data = str(raw_body)
+        print(data)
 
         _self.protocol_version = 'HTTP/1.1'
         _self.send_response(200)
-        _self.send_header("Content-type", "application/json")
+        _self.send_header("Content-type", "text/plain")
         _self.end_headers()
-        _self.wfile.write(b"{}")
+        _self.wfile.write(data)
 
 
-with socketserver.TCPServer(("", 8080), ServerHandler) as httpd:
-    print("serving at port", 8080)
+with socketserver.TCPServer(("", 8000), ServerHandler) as httpd:
+    print("serving at port", 8000)
     httpd.serve_forever()
