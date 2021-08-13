@@ -18,14 +18,14 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
         raw_body = _self.rfile.read(content_len)
 
         #data = json.load(raw_body)
-        data = str(raw_body)
+        data = raw_body.decode('utf-8')
         print(data)
 
         _self.protocol_version = 'HTTP/1.1'
         _self.send_response(200)
         _self.send_header("Content-type", "text/plain")
         _self.end_headers()
-        _self.wfile.write(data)
+        _self.wfile.write(data.encode("utf-8"))
 
 
 with socketserver.TCPServer(("", 8000), ServerHandler) as httpd:

@@ -41,13 +41,14 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
         content_len = int(_self.headers.get("Content-Length"), 0)
         raw_body = _self.rfile.read(content_len)
 
-        data = "{}".format(raw_body)
+        data = raw_body.decode('utf-8')
         print(data)
+        handleUidString(data)
 
         _self.protocol_version = "HTTP/1.1"
         _self.send_response(200)
         _self.end_headers()
-        _self.wfile.write(data)
+        _self.wfile.write("ok")
 
 
 
