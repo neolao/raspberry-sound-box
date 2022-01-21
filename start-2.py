@@ -19,6 +19,8 @@ process = None
 recordProcess = None
 recordStep = 0
 context = None
+recordCardUid = '70cddb2a'
+stopCardUid = '4a14b71e'
 
 def findFile(uid, extension = "json"):
     for name in glob.glob("data/" + uid + ".*." + extension):
@@ -65,7 +67,7 @@ def handleUidString(uidString):
     GPIO.output(LED, GPIO.LOW)
 
     # Check the recorder card
-    if uidString == "70cddb2a" and recordStep == 0:
+    if uidString == recordCardUid and recordStep == 0:
         subprocess.run(["mpg123", "sounds/veuillez-me-montrer-la-carte-a-enregistrer.mp3"])
         recordStep = 1
         return
@@ -85,7 +87,7 @@ def handleUidString(uidString):
         return
 
     # Stop process
-    if uidString == "4a14b71e":
+    if uidString == stopCardUid:
         print("STOP")
         if process is not None:
             process.terminate()
@@ -169,8 +171,7 @@ def listenNFC(pn532):
         if error :
           continue
 
-        #uidString = ''.join(format(x, '02x') for x in uid)
-        uidString = str(uid)
+        uidString = ''.join(format(x, '02x') for x in uid)
 
         handleUidString(uidString)
 
@@ -179,6 +180,15 @@ def listenNFC(pn532):
 
 if __name__ == '__main__':
     try:
+        # Load config file
+        with open("./data/config.json") as dataString:
+            data = loadJson(dataString)
+            print(data)
+            recordCardUid = data["record-card-uid"]
+            stopCardUid = data["stop-card-uid"]
+ 
+
+        # Configure GPIO
         GPIO.setmode(GPIO.BOARD)
         GPIO.setwarnings(False)
 
@@ -186,6 +196,7 @@ if __name__ == '__main__':
         GPIO.setup(LED, GPIO.OUT)
         GPIO.output(LED, GPIO.LOW)
 
+        # Configure NFC reader
         rc522 = RFID()
 
         # Ready message
