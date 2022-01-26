@@ -160,12 +160,19 @@ def handleUidString(uidString):
 
 def listenNFC(pn532):
     while True:
+
+        time.sleep(1)
+
         # Check if a card is available to read
         rc522.wait_for_tag()
         (error, tag_type) = rc522.request()
+        if error:
+          print("error request")
 
         if not error :
           (error, uid) = rc522.anticoll()
+          if error:
+            print("error anticoll")
 
         # Try again if no card is available.
         if error :
